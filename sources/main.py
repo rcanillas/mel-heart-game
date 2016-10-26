@@ -3,11 +3,12 @@ import sys
 from pygame.locals import *
 
 SPEED = 5
+TIME = 2
 # FPS
 FPS = 60
 # Window
-HEIGHT = 500
-WIDTH = 500
+HEIGHT = 700
+WIDTH = 900
 
 
 def updatedposition(posx, posy, newposx, newposy):
@@ -30,21 +31,47 @@ def updatedposition(posx, posy, newposx, newposy):
         posy -= SPEED
     else:
         posy = posy
-    #print "Goal position : %d %d  Current position : %d %d " % (newposx, newposy, posx, posy)
+    # print "Goal position : %d %d  Current position : %d %d " % (newposx, newposy, posx, posy)
 
     return posx, posy
+
+
+def updateposition2(oldposy, oldposx, goalx, goaly, current_frame):
+    posx = oldposx
+    posy = oldposy
+    if current_frame >= TIME*FPS:
+        posx = goalx
+        posy = goaly
+        print "time up"
+
+    else:
+        lenx = goalx - oldposx
+        leny = goaly - oldposy
+        # print lenx, leny
+
+        speedX = float(lenx) / float(TIME*FPS)
+        speedY = float(leny) / float(TIME*FPS)
+
+        # print speedX, speedY
+        posx += current_frame*speedX
+        posy += current_frame*speedY
+        print posx, posy
+        current_frame += 1
+
+    return posx, posy, current_frame
 
 
 def main():
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
-    # DISPLAYSURF = DISPLAYSURF.convert_alpha()
+
     pygame.display.set_caption('Cat !')
     fpsClock = pygame.time.Clock()
     # Colors
-    TEAL = (0, 128, 128)
-    BLUE = (0, 0, 250)
-    WHITE = (255, 255, 255)
+    TEAL = (0, 128, 128, 255)
+    BLUE = (0, 0, 250, 255)
+    WHITE = (255, 255, 255, 255)
+    NONE = (255, 255, 255, 255)
 
     # Sounds
     catMeow = pygame.mixer.Sound('CatMeow.ogg')
@@ -65,17 +92,19 @@ def main():
 
     pygame.draw.rect(DISPLAYSURF, TEAL, smallRect)
 
-    newCatx = catx = 50
-    newCaty = caty = 50
+    newCatx = catx = tempcatx = catx2 = 50
+    newCaty = caty = tempcaty = caty2 = 50
     meow = False
+    current_frame = TIME*FPS
+
     # Game Loop
     while True:
 
-
         DISPLAYSURF.fill(WHITE)
-        catRect.center=(catx, caty)
+        catRect.center = (tempcatx, tempcaty)
         DISPLAYSURF.blit(catIMG, catRect)
         DISPLAYSURF.blit(textSurfaceObj, textRectObj)
+        # DISPLAYSURF = DISPLAYSURF.convert_alpha()
 
         # Event handling
         for event in pygame.event.get():
@@ -84,9 +113,12 @@ def main():
                 sys.exit()
             if event.type == MOUSEBUTTONUP:
                 (newCatx, newCaty) = event.pos
+                (caty2, catx2) = catRect.center
+                current_frame = 1
                 meow = True
 
         catx, caty = updatedposition(catx, caty, newCatx, newCaty)
+        tempcatx, tempcaty, current_frame = updateposition2(catx2, caty2, newCatx, newCaty, current_frame)
         if (abs(newCatx - catx) <= 10) and (abs(newCaty - caty) <= 10) and meow:
             print "Meow"
             catMeow.play()
