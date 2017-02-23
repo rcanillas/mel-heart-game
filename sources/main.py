@@ -1,9 +1,10 @@
 import pygame
 import sys
 from pygame.locals import *
+from random import *
 
-SPEED = 5
-TIME = 2
+SPEED = 1
+TIME = 1
 # FPS
 FPS = 60
 # Window
@@ -11,38 +12,55 @@ HEIGHT = 700
 WIDTH = 900
 
 
-def updatedposition(posx, posy, newposx, newposy):
-    if (newposx - posx) >= 5:
-        posx += SPEED
-    else:
-        posx = posx
+def updateMousePosition(posx, posy, catposx, catposy, current_frame):
+    speedx = 0
+    speedy = 0
 
-    if (newposx - posx) <= 5:
-        posx -= SPEED
-    else:
-        posx = posx
+    if current_frame % 60 == 0:
+        speedx = randint(-15, 15)
+        speedy = randint(-15, 15)
 
-    if (newposy - posy) >= 5:
-        posy += SPEED
-    else:
-        posy = posy
+    print speedx, speedy
 
-    if (newposy - posy) <= 5:
-        posy -= SPEED
-    else:
-        posy = posy
-    # print "Goal position : %d %d  Current position : %d %d " % (newposx, newposy, posx, posy)
+    posx += speedx
+    posy += speedy
+    if posx < 0:
+        posx = 0
+    if posy < 0:
+        posy = 0
+    if posx > WIDTH:
+        posx = WIDTH
+    if posy > HEIGHT:
+        posy = HEIGHT
+
+
+ #   if (posx == 0) or (posx == WIDTH):
+#       posx = posx
+#    else:
+#        if catposx >= posx:
+ #           posx += - speed
+ #       if catposx < posx:
+ #           posx += speed
+#
+ #   if (posy == 0) or (posy == HEIGHT):
+  #      posy = posy
+  #  else:
+ #       if catposy >= posy:
+ #           posy += - speed
+ #       if catposy < posy:
+ #           posy += speed
+   # print "Goal position : %d %d  Current position : %d %d " % (newposx, newposy, posx, posy)
 
     return posx, posy
 
 
-def updateposition2(oldposy, oldposx, goalx, goaly, current_frame):
+def updateCatPosition(oldposy, oldposx, goalx, goaly, current_frame):
     posx = oldposx
     posy = oldposy
     if current_frame >= TIME*FPS:
         posx = goalx
         posy = goaly
-        print "time up"
+        # print "time up"
 
     else:
         lenx = goalx - oldposx
@@ -55,7 +73,7 @@ def updateposition2(oldposy, oldposx, goalx, goaly, current_frame):
         # print speedX, speedY
         posx += current_frame*speedX
         posy += current_frame*speedY
-        print posx, posy
+        # print posx, posy
         current_frame += 1
 
     return posx, posy, current_frame
@@ -75,7 +93,7 @@ def main():
 
     # Sounds
     catMeow = pygame.mixer.Sound('CatMeow.ogg')
-    catMeow.play()
+    # catMeow.play()
 
     # Texts
     fonObj = pygame.font.Font("freesansbold.ttf", 32)
@@ -86,25 +104,38 @@ def main():
     catIMG = pygame.image.load('cat_PNG.png')
     catIMG = pygame.transform.scale(catIMG, (150, 100))
     catRect = catIMG.get_rect()
+
+    mouseIMG = pygame.image.load('mouse_PNG.png')
+    mouseIMG = pygame.transform.scale(mouseIMG, (50, 50))
+    mouseRect = mouseIMG.get_rect()
+
     smallRect = pygame.Rect(0, HEIGHT / 2, 25, 25)
 
     # Drawing
 
     pygame.draw.rect(DISPLAYSURF, TEAL, smallRect)
 
+    mouseX = randint(0, WIDTH)
+    mouseY = randint(0, HEIGHT)
+
     newCatx = catx = tempcatx = catx2 = 50
     newCaty = caty = tempcaty = caty2 = 50
     meow = False
     current_frame = TIME*FPS
+
 
     # Game Loop
     while True:
 
         DISPLAYSURF.fill(WHITE)
         catRect.center = (tempcatx, tempcaty)
+        mouseRect.center = (mouseX, mouseY)
         DISPLAYSURF.blit(catIMG, catRect)
+        DISPLAYSURF.blit(mouseIMG, mouseRect)
         DISPLAYSURF.blit(textSurfaceObj, textRectObj)
         # DISPLAYSURF = DISPLAYSURF.convert_alpha()
+
+
 
         # Event handling
         for event in pygame.event.get():
@@ -113,16 +144,22 @@ def main():
                 sys.exit()
             if event.type == MOUSEBUTTONUP:
                 (newCatx, newCaty) = event.pos
-                (caty2, catx2) = catRect.center
+                (caty, catx) = catRect.center
                 current_frame = 1
                 meow = True
 
-        catx, caty = updatedposition(catx, caty, newCatx, newCaty)
-        tempcatx, tempcaty, current_frame = updateposition2(catx2, caty2, newCatx, newCaty, current_frame)
-        if (abs(newCatx - catx) <= 10) and (abs(newCaty - caty) <= 10) and meow:
-            print "Meow"
+        # catx, caty = updatedposition(catx, caty, newCatx, newCaty)
+        tempcatx, tempcaty, current_frame = updateCatPosition(catx, caty, newCatx, newCaty, current_frame)
+
+        (mouseX, mouseY) = updateMousePosition(mouseX, mouseY, tempcatx, tempcaty, current_frame)
+        if catRect.colliderect(mouseRect) and meow:
+            # print "Meow"
             catMeow.play()
             meow = False
+            mouseX = randint(0, WIDTH)
+            mouseY = randint(0, HEIGHT)
+
+
 
         pygame.display.update()
         fpsClock.tick(FPS)
